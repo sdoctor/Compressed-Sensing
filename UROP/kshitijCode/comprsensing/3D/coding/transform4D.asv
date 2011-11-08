@@ -1,0 +1,17 @@
+function [T]= transform3D(I,type)
+
+switch lower(type)
+   
+   case 'dct4'
+       
+       T=dct4(I);
+             
+       
+   case 'wavelet'
+       [af sf]=farras;
+       T=dwt4D(I,3,af);
+       
+   otherwise
+      disp('Unknown transform.')
+end
+
