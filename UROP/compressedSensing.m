@@ -47,7 +47,7 @@ indices = zeros(s, 1);
 for j=1:s
     indices(j) = j;
 end
-log_coefs = log10(coefs);
+log_coefs = log10(abs(coefs));
 log_indices = log10(indices);
 slope = log_coefs/log_indices;
 figure;
