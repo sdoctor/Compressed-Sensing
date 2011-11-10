@@ -13,7 +13,7 @@
 
 
 % READ VIDEO
-reader = VideoReader('small_test.mov');
+reader = VideoReader('test_movie.mov');
 
 nFrames = reader.NumberOfFrames;
 vidHeight = reader.Height;
@@ -22,25 +22,24 @@ disp('numFrames =');
 disp(nFrames);
 
 % Prepare to write video
-diff_reconstruct_writer = VideoWriter('diff_reconstruct.avi');
+diff_reconstruct_writer = VideoWriter('diff_reconstruct_2000.avi');
 diff_reconstruct_writer.FrameRate = reader.FrameRate;
 open(diff_reconstruct_writer);
 
-small_mov_writer = VideoWriter('small_mov.avi');
+small_mov_writer = VideoWriter('small_mov_2000.avi');
 small_mov_writer.FrameRate = reader.FrameRate;
 open(small_mov_writer);
 
-diff_mov_writer = VideoWriter('differences.avi');
+diff_mov_writer = VideoWriter('differences_2000.avi');
 diff_mov_writer.FrameRate = reader.FrameRate;
 open(diff_mov_writer);
 
-cs_diff_writer = VideoWriter('cs_diff.avi');
+cs_diff_writer = VideoWriter('cs_diff_2000.avi');
 cs_diff_writer.FrameRate = reader.FrameRate;
 open(cs_diff_writer);
 
-cs_mov_writer = VideoWriter('cs_mov.avi');
-cs_mov_writer.FrameRate = reader.FrameRate;
-open(cs_mov_writer);
+%cs_mov_writer = VideoWriter('cs_mov.avi');
+%open(cs_mov_writer);
 
 
 
@@ -81,10 +80,12 @@ cs_mov(1:nFrames) = ...
 
 
 % Variables for compressed sensing
-m = 1000;
+m = 2000;
 M = rand(m, vidHeight*vidWidth*3*.01); %*Note* should it be a different random per frame?
 
-diff_mov(1).cdata = imresize(read(reader, 1), .1); %initialize keyframe
+keyframe = imresize(read(reader, 1), .1);
+
+diff_mov(1).cdata = keyframe; %initialize keyframe
 writeVideo(diff_mov_writer, diff_mov(1).cdata);
 
 % Read and resize one frame at a time
@@ -104,6 +105,8 @@ for j = 1 : nFrames-1
     
     
 end
+close(small_mov_writer);
+close(diff_mov_writer);
 
 %disp('now showing small movie');
 %movie(hf, small_mov, 1, reader.FrameRate);
@@ -117,9 +120,10 @@ cs_diff(1:nFrames) = ...
     struct('cdata', zeros(vidHeight*.1, vidWidth*.1, 3, 'uint8'),...
     'colormap', []);
 
+cs_diff(1).cdata = keyframe;
 disp('now performing compressed sensing on the diff frames');
 % Compressed sensing on difference frames
-for i = 1 : nFrames-1 %testing on first frame - should be nFrames-1
+for i = 2 : nFrames-1 %testing on first frame - should be nFrames-1
    % Compressed sensing on frames -- to be moved to another function
    B = double(diff_mov(i).cdata);
    disp('size of frame = ');
@@ -143,8 +147,15 @@ for i = 1 : nFrames-1 %testing on first frame - should be nFrames-1
 %     C = dctmtx(s);
 %     y = M*C*new_coefs;
     y = M*I;
-    opts = spgSetParms('verbosity', 0);
-    t = spg_bp(M, y, opts);
+%     opts = spgSetParms('verbosity', 0);
+%     t = spg_bp(M, y, opts);
+
+    sigma = 0.1;                                     % Desired ||Ax - b||_2
+    opts = spgSetParms('verbosity',0);
+    t = spg_bpdn(M, y, sigma, opts);
+
+    
+    
 %     x = idct2(t);
     x = [t; t; t]; % concatenate to fake color - hack...
     cs_img = reshape(x, vidHeight*.1, vidWidth*.1, 3);
@@ -156,8 +167,8 @@ for i = 1 : nFrames-1 %testing on first frame - should be nFrames-1
     subplot(1, 2, 2), imshow(cs_diff(i).cdata);
 end
 
-%disp('now showing cs movie');
-%movie(hf, cs_mov, 1, reader.FrameRate);
+close(cs_diff_writer);
+
 
 
 %Reconstruct from difference frames
@@ -165,13 +176,16 @@ diff_reconstruct(1:nFrames) = ...
     struct('cdata', zeros(vidHeight*.1, vidWidth*.1, 3, 'uint8'),...
     'colormap', []);
 diff_reconstruct(1).cdata = diff_mov(1).cdata; %keyframe
-writeVideo(diff_reconstruct, diff_reconstruct(1).cdata);
+writeVideo(diff_reconstruct_writer, diff_reconstruct(1).cdata);
 
 for h=2:nFrames-1
     %something is wrong here
     diff_reconstruct(h).cdata = diff_reconstruct(h-1).cdata + diff_mov(h).cdata;
     writeVideo(diff_reconstruct_writer, diff_reconstruct(h).cdata);
 end
+close(diff_reconstruct_writer);
+
+
 
 disp('now showing diff reconstruct movie');
 movie(hf, diff_reconstruct, 1, reader.FrameRate);
@@ -187,11 +201,11 @@ movie(hf, cs_diff, 1, reader.FrameRate);
 
 
 
+%close(cs_mov_writer);
 
-%close all writers
-close(diff_reconstruct_writer);
-close(small_mov_Writer);
-close(diff_mov_writer);
-close(cs_diff_writer);
-close(cs_mov_writer);
+%disp('now showing cs movie');
+%movie(hf, cs_mov, 1, reader.FrameRate);
+
+
+
 
