@@ -116,7 +116,8 @@ for i = 15 : 16 %testing on first frame - should be nFrames-1
     opts = spgSetParms('verbosity', 0);
     t = spg_bp(M, y, opts);
 %     x = idct2(t);
-    cs_img = reshape(t, vidHeight*.1, vidWidth*.1, 1);
+    x = [t; t; t]; % concatenate to fake color - hack...
+    cs_img = reshape(x, vidHeight*.1, vidWidth*.1, 3);
     cs_diff(i).cdata = uint8(cs_img); 
     
     figure
