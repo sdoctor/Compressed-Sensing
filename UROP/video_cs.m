@@ -96,6 +96,7 @@ for i = 15 : 16 %testing on first frame - should be nFrames-1
    disp(size(B));
    I = B(:);
    [s, h] = size(I);
+   I = I(1:s/3);
     
    disp('size of image =');
    disp(s);
@@ -108,14 +109,14 @@ for i = 15 : 16 %testing on first frame - should be nFrames-1
 %     for i=1:m
 %         new_coefs(i) = coefs(i);
 %     end
-    M = rand(m, s);
+    M = rand(m, s/3);
 %     C = dctmtx(s);
 %     y = M*C*new_coefs;
     y = M*I;
     opts = spgSetParms('verbosity', 0);
     t = spg_bp(M, y, opts);
 %     x = idct2(t);
-    cs_img = reshape(t, vidHeight*.1, vidWidth*.1, 3);
+    cs_img = reshape(t, vidHeight*.1, vidWidth*.1, 1);
     cs_diff(i).cdata = uint8(cs_img); 
     
     figure
