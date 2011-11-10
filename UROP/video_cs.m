@@ -52,7 +52,7 @@ cs_mov(1:nFrames) = ...
 m = 1000;
 M = rand(m, vidHeight*vidWidth*3*.01); %*Note* should it be a different random per frame?
 
-diff_mov(1).cdata = read(reader, 1); %initialize keyframe
+diff_mov(1).cdata = imresize(read(reader, 1), .1); %initialize keyframe
 
 % Read and resize one frame at a time
 for j = 1 : nFrames-1  
@@ -62,14 +62,14 @@ for j = 1 : nFrames-1
     small_mov(j).cdata = J;
     
     % Make Difference Frames movie
-    
     if j > 1
         diff_frame = read(reader, j) - read(reader, j-1);
-        diff_mov(j).cdata = diff_frame; %NOT RESIZED
+        diff_mov(j).cdata = imresize(diff_frame, .1); 
     end
     
-    %     % Compressed sensing on frames -- to be moved to another function
-%     B = double(J);
+    
+% Compressed sensing on frames -- to be moved to another function
+%    B = double(J);
 %     I = B(:);
 %     [s, h] = size(I);
 %     coefs = dct2(I);
@@ -112,10 +112,10 @@ diff_reconstruct(1:nFrames) = ...
     'colormap', []);
 diff_reconstruct(1).cdata = diff_mov(1).cdata; %keyframe
 
-for h=1:nFrames-1
-    if h > 1
-        diff_reconstruct(h).cdata = diff_reconstruct(h-1).cdata + diff_mov(h).cdata;
-    end
+for h=2:nFrames-1
+    %something is wrong here
+    diff_reconstruct(h).cdata = diff_reconstruct(h-1).cdata + diff_mov(h).cdata;
+    
 end
 
 disp('now showing diff reconstruct movie');
