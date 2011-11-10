@@ -32,6 +32,9 @@ end
 hf = figure;
 set(hf, 'position', [150 150 vidWidth vidHeight])
 
+%disp('now showing original movie');
+%movie(hf, mov, 1, reader.FrameRate);
+
 
 % MAKE MOVIE 10% OF SIZE!
 small_mov(1:nFrames) = ...
@@ -41,6 +44,8 @@ small_mov(1:nFrames) = ...
 diff_mov(1:nFrames) = ...
     struct('cdata', zeros(vidHeight*.1, vidWidth*.1, 3, 'uint8'),...
     'colormap', []);
+
+
 
 cs_mov(1:nFrames) = ...
     struct('cdata', zeros(vidHeight*.1, vidWidth*.1, 3, 'uint8'),...
@@ -68,39 +73,55 @@ for j = 1 : nFrames-1
     end
     
     
-% Compressed sensing on frames -- to be moved to another function
-%    B = double(J);
-%     I = B(:);
-%     [s, h] = size(I);
-%     coefs = dct2(I);
-%     new_coefs = zeros(s, 1);
-%     indices = zeros(s,1);
-%     for i=1:m
-%         new_coefs(i) = coefs(i);
-%     end
-%     %M = rand(m, s);
-%     C = dctmtx(s);
-%     y = M*C*new_coefs;
-%     opts = spgSetParms('verbosity', 0);
-%     t = spg_bp(M*C, y, opts);
-%     x = idct2(t);
-%     cs_img = reshape(x, vidHeight*.1, vidWIdth*.1, 3);
-%     cs_mov(j).cdata = cs_img;
-    
 end
-
-
-
-
-% Play back the movie once at the video's frame rate.
-%disp('now showing original movie');
-%movie(hf, mov, 1, reader.FrameRate);
 
 %disp('now showing small movie');
 %movie(hf, small_mov, 1, reader.FrameRate);
 
 disp('now showing diff frame movie');
 movie(hf, diff_mov, 1, reader.FrameRate);
+
+
+
+cs_diff(1:nFrames) = ...
+    struct('cdata', zeros(vidHeight*.1, vidWidth*.1, 3, 'uint8'),...
+    'colormap', []);
+
+disp('now performing compressed sensing on the diff frames');
+% Compressed sensing on difference frames
+for i = 15 : 16 %testing on first frame - should be nFrames-1
+   % Compressed sensing on frames -- to be moved to another function
+   B = double(diff_mov(i).cdata);
+   disp('size of frame = ');
+   disp(size(B));
+   I = B(:);
+   [s, h] = size(I);
+    
+   disp('size of image =');
+   disp(s);
+   disp('cs on frame:');
+   disp(i);
+    %don't even need the dct stuff because so sparse...
+%     coefs = dct2(I);
+%     new_coefs = zeros(s, 1);
+%     indices = zeros(s,1);
+%     for i=1:m
+%         new_coefs(i) = coefs(i);
+%     end
+    M = rand(m, s);
+%     C = dctmtx(s);
+%     y = M*C*new_coefs;
+    y = M*I;
+    opts = spgSetParms('verbosity', 0);
+    t = spg_bp(M, y, opts);
+%     x = idct2(t);
+    cs_img = reshape(t, vidHeight*.1, vidWidth*.1, 3);
+    cs_diff(i).cdata = uint8(cs_img); 
+    
+    figure
+    subplot(1, 2, 1), imshow(diff_mov(i).cdata)
+    subplot(1, 2, 2), imshow(cs_diff(i).cdata);
+end
 
 %disp('now showing cs movie');
 %movie(hf, cs_mov, 1, reader.FrameRate);
@@ -120,6 +141,15 @@ end
 
 disp('now showing diff reconstruct movie');
 movie(hf, diff_reconstruct, 1, reader.FrameRate);
+
+
+% Reconstruct cs_mov from compressed diff frames
+%TODO
+
+disp('now showing diff from cs ');
+movie(hf, cs_diff, 1, reader.FrameRate);
+
+
 
 
 %*note* for writing...VideoWriter writes video...
